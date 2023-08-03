@@ -57,7 +57,10 @@ export const handler = async (event) => {
       return await getOne(connection, name);
     }
   } catch (error) {
-    console.error("Internal server error at mushroom endpoint:", error);
+    console.error(
+      "Internal server error at mushcheck-mushrooms-get endpoint:",
+      error
+    );
     return {
       statusCode: 500,
       body: JSON.stringify({ message: "Internal server error" }),

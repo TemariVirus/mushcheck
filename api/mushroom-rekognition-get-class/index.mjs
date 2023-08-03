@@ -46,7 +46,10 @@ export const handler = async (event) => {
       body: JSON.stringify(response.CustomLabels),
     };
   } catch (error) {
-    console.error(error);
+    console.error(
+      "Internal server error at mushcheck-rekognition-get-class endpoint",
+      error
+    );
     return {
       statusCode: 500,
       headers: {
