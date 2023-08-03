@@ -1,3 +1,20 @@
-<h1>Welcome to SvelteKit</h1>
-<p>Visit <a href="https://kit.svelte.dev">kit.svelte.dev</a> to read the documentation</p>
-<a href="/mushrooms">Mushrooms</a>
+<script lang="ts">
+	import Navbar from '$lib/navbar.svelte';
+</script>
+
+<Navbar />
+
+<div class="main-content">
+	<h1 class="huge-text">MushCheck</h1>
+	<h3>Your trusted AI-powered tool for identifying mushroom genera.</h3>
+</div>
+
+<style>
+	.main-content {
+		text-align: center;
+	}
+
+	h3 {
+		font-size: larger;
+	}
+</style>

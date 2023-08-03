@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { page } from '$app/stores';
-	import { goto, invalidate } from '$app/navigation';
 	import { getJson } from '$lib';
+	import Navbar from '$lib/navbar.svelte';
 
 	export let mushrooms: { name: string; image_url: string }[] = [];
 	export let name: string | null = '';
@@ -38,30 +38,36 @@
 	});
 </script>
 
-<section>
-	{#if loading}
-		<h1>Loading...</h1>
-	{:else if name}
+<Navbar />
+
+{#if loading}
+	<h1 class="absolute-center huge-text">Loading...</h1>
+{:else if name}
+	<section class="mushroom-info-card">
 		<h1>{name}</h1>
 		<img src={image_url} alt={`${name}`} />
 		<p>Edible: {edible ? 'Yes' : 'No'}</p>
 		{@html description}
-	{:else}
-		{#each mushrooms as mushroom}
-			<a href={`/mushrooms?name=${mushroom.name}`} data-sveltekit-reload>
-				<img src={mushroom.image_url} alt={`${mushroom.name}`} />
-				<p>{mushroom.name}</p>
-			</a>
-		{/each}
-	{/if}
-</section>
+	</section>
+{:else}
+	<h1>Mushrooms</h1>
+	<section class="mushrooms-card">
+		<div class="mushroom-grid">
+			{#each mushrooms as mushroom}
+				<a href={`/mushrooms?name=${mushroom.name}`} class="mushroom-card" data-sveltekit-reload>
+					<img src={mushroom.image_url} alt={`${mushroom.name}`} />
+					<h2>{mushroom.name}</h2>
+				</a>
+			{/each}
+		</div>
+	</section>
+{/if}
 
 <style>
 	section {
 		display: flex;
 		flex-direction: column;
 		align-items: left;
-		width: 50%;
 	}
 
 	h1 {
@@ -72,5 +78,31 @@
 		max-width: 100%;
 		height: auto;
 		margin: 1rem;
+	}
+
+	.mushroom-info-card {
+		max-width: 50%;
+	}
+
+	.mushrooms-card {
+		max-width: 80%;
+	}
+
+	.mushroom-card {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+	}
+
+	.mushroom-grid img {
+		height: 250px;
+		width: 100%;
+		object-fit: cover;
+	}
+
+	.mushroom-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+		grid-gap: 2rem;
 	}
 </style>

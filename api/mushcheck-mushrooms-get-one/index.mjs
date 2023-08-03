@@ -1,7 +1,7 @@
 import { createConnection } from "mysql2/promise";
 
 async function getAllMushrooms(connection) {
-  const query = `SELECT name, image_url FROM mushrooms`;
+  const query = `SELECT name, image_url FROM mushrooms ORDER BY name ASC`;
   const [rows] = await connection.execute(query);
   return {
     statusCode: 200,
