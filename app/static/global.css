@@ -6,10 +6,8 @@
 
 body {
 	font-family: 'Roboto', sans-serif;
-}
-
-body {
-	padding: 20px;
+	padding: 0;
+	margin: 0;
 	background-color: #222;
 	color: #fff;
 }
@@ -51,4 +49,15 @@ a:hover {
 img {
 	max-width: 100%;
 	border-radius: 8px;
+}
+
+.absolute-center {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+}
+
+.huge-text {
+	font-size: 84px;
 }
