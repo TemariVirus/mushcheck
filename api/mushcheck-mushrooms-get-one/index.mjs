@@ -1,3 +1,5 @@
+// File: api\mushcheck-mushrooms-get\index.mjs
+
 import { createConnection } from "mysql2/promise";
 
 async function getAllMushrooms(connection) {
