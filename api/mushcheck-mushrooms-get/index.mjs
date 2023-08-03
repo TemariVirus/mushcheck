@@ -1,6 +1,7 @@
 // File: api\mushcheck-mushrooms-get\index.mjs
 
-import { createConnection } from "mysql2/promise";
+import { KMSClient, DecryptCommand } from "@aws-sdk/client-kms";
+import { createPool } from "mysql2/promise";
 
 /**
  * @param {Connection} connection
@@ -36,21 +37,36 @@ function getOne(connection, name) {
   });
 }
 
+const kms = new KMSClient();
+const params = {
+  CiphertextBlob: Buffer.from(process.env["db_password"], "base64"),
+  EncryptionContext: {
+    LambdaFunctionName: process.env.AWS_LAMBDA_FUNCTION_NAME,
+  },
+};
+const command = new DecryptCommand(params);
+const response = await kms.send(command);
+const password = Buffer.from(response.Plaintext).toString("ascii");
+
+const pool = createPool({
+  host: process.env["db_host"],
+  user: process.env["db_user"],
+  password: password,
+  port: process.env["db_port"],
+  database: process.env["db_database"],
+  connectionLimit: process.env["db_connectionLimit"],
+});
+
 /**
  * @param {{queryStringParameters: {name: string}}} event
  * @returns {Promise<{statusCode: number, body: any}>}
  */
 export const handler = async (event) => {
-  const connection = await createConnection({
-    host: "mushcheck.cml9zrfq9rgt.us-east-1.rds.amazonaws.com",
-    user: "ctec",
-    password: "MySQL_8.0.33_Instance_for_CTEC_project",
-    database: "mushcheck",
-  });
+  const connection = await pool.getConnection();
+
   const name = event?.queryStringParameters?.name;
 
   try {
-    await connection.connect();
     if (!name) {
       return await getAll(connection);
     } else {
@@ -66,6 +82,6 @@ export const handler = async (event) => {
       body: JSON.stringify({ message: "Internal server error" }),
     };
   } finally {
-    connection.end();
+    connection.release();
   }
 };

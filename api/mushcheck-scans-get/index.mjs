@@ -1,6 +1,7 @@
 // File: api\mushcheck-scans-get\index.mjs
 
-import { createConnection } from "mysql2/promise";
+import { KMSClient, DecryptCommand } from "@aws-sdk/client-kms";
+import { createPool } from "mysql2/promise";
 
 function updateLastVisit(connection, id) {
   const query = `UPDATE scans SET last_visit = NOW() WHERE id = ?`;
@@ -62,24 +63,37 @@ function getByUserId(connection, user_id) {
   });
 }
 
+const kms = new KMSClient();
+const params = {
+  CiphertextBlob: Buffer.from(process.env["db_password"], "base64"),
+  EncryptionContext: {
+    LambdaFunctionName: process.env.AWS_LAMBDA_FUNCTION_NAME,
+  },
+};
+const command = new DecryptCommand(params);
+const response = await kms.send(command);
+const password = Buffer.from(response.Plaintext).toString("ascii");
+
+const pool = createPool({
+  host: process.env["db_host"],
+  user: process.env["db_user"],
+  password: password,
+  port: process.env["db_port"],
+  database: process.env["db_database"],
+  connectionLimit: process.env["db_connectionLimit"],
+});
+
 /**
  * @param {{queryStringParameters: {name: string}}} event
  * @returns {Promise<{statusCode: number, body: any}>}
  */
 export const handler = async (event) => {
-  const connection = await createConnection({
-    host: "mushcheck.cml9zrfq9rgt.us-east-1.rds.amazonaws.com",
-    user: "ctec",
-    password: "MySQL_8.0.33_Instance_for_CTEC_project",
-    database: "mushcheck",
-  });
+  const connection = await pool.getConnection();
+
+  const scan_id = event?.queryStringParameters?.id;
+  const user_id = event?.queryStringParameters?.user_id;
 
   try {
-    await connection.connect();
-
-    const scan_id = event?.queryStringParameters?.id;
-    const user_id = event?.queryStringParameters?.user_id;
-
     if (scan_id) {
       return await getById(connection, scan_id, user_id);
     } else if (user_id) {
@@ -100,6 +114,6 @@ export const handler = async (event) => {
       body: JSON.stringify({ message: "Internal server error" }),
     };
   } finally {
-    connection.end();
+    connection.release();
   }
 };

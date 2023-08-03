@@ -5,7 +5,7 @@ import {
   DetectCustomLabelsCommand,
 } from "@aws-sdk/client-rekognition";
 
-const client = new RekognitionClient();
+const rekognition = new RekognitionClient();
 
 /**
  * @param {{body: string}} event
@@ -25,8 +25,7 @@ export const handler = async (event) => {
   }
 
   const params = {
-    ProjectVersionArn:
-      "arn:aws:rekognition:us-east-1:941637046289:project/mushcheck/version/mushcheck.2023-08-02T16.07.03/1690963625734",
+    ProjectVersionArn: process.env["rekognitionEndpoint"],
     Image: {
       Bytes: Buffer.from(image, "base64"),
     },
@@ -37,7 +36,7 @@ export const handler = async (event) => {
   const command = new DetectCustomLabelsCommand(params);
 
   try {
-    const response = await client.send(command);
+    const response = await rekognition.send(command);
     return {
       statusCode: 200,
       headers: {
