@@ -1,5 +1,14 @@
 import { createConnection } from "mysql2/promise";
 
+async function getAllMushrooms(connection) {
+  const query = `SELECT name, image_url FROM mushrooms`;
+  const [rows] = await connection.execute(query);
+  return {
+    statusCode: 200,
+    body: JSON.stringify(rows),
+  };
+}
+
 export const handler = async (event) => {
   const connection = await createConnection({
     host: "mushcheck.cml9zrfq9rgt.us-east-1.rds.amazonaws.com",
@@ -12,10 +21,7 @@ export const handler = async (event) => {
     await connection.connect();
 
     if (!event?.queryStringParameters?.name) {
-      return {
-        statusCode: 400,
-        body: JSON.stringify({ message: "Missing name parameter" }),
-      };
+      return getAllMushrooms(connection);
     }
 
     const name = event.queryStringParameters.name;
@@ -34,7 +40,7 @@ export const handler = async (event) => {
       body: JSON.stringify(rows[0]),
     };
   } catch (error) {
-    console.error("Internal server error at /mushroom endpoint:", error);
+    console.error("Internal server error at mushroom endpoint:", error);
     return {
       statusCode: 500,
       body: JSON.stringify({ message: "Internal server error" }),
