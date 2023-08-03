@@ -10,6 +10,8 @@
 	export let edible: boolean | null = null;
 	export let description: string | null = '';
 
+	const get_url = `https://qbc4z2jvxd6vzbsfjuinibmnum0xkggn.lambda-url.us-east-1.on.aws`;
+
 	let loading = true;
 
 	onMount(async () => {
@@ -17,14 +19,10 @@
 		let result;
 
 		if (!name) {
-			result = await getJson(
-				`https://5yrf3rrviwwrb6xhu77445ssiy0kcsqb.lambda-url.us-east-1.on.aws`
-			);
+			result = await getJson(get_url);
 			mushrooms = result;
 		} else {
-			result = await getJson(
-				`https://5yrf3rrviwwrb6xhu77445ssiy0kcsqb.lambda-url.us-east-1.on.aws?name=${name}`
-			);
+			result = await getJson(`${get_url}?name=${name}`);
 			image_url = result.image_url;
 			edible = result.edible == 0;
 			description = result.description;
