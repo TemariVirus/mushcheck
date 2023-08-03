@@ -1,4 +1,7 @@
 {
+  "scripts": {
+    "init": "find . -name \"package.json\" -exec sh -c '(cd $(dirname {}) && npm i)' \\;"
+  },
   "dependencies": {
     "mysql2": "^3.5.2",
     "node-html-parser": "^6.1.5"
