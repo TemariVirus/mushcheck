@@ -88,11 +88,10 @@ const pool = createPool({
  * @returns {Promise<{statusCode: number, body: any}>}
  */
 export const handler = async (event) => {
-  const connection = await pool.getConnection();
-
   const scan_id = event?.queryStringParameters?.id;
   const user_id = event?.queryStringParameters?.user_id;
 
+  const connection = await pool.getConnection();
   try {
     if (scan_id) {
       return await getById(connection, scan_id, user_id);

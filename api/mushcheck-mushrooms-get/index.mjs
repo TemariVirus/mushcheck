@@ -62,10 +62,9 @@ const pool = createPool({
  * @returns {Promise<{statusCode: number, body: any}>}
  */
 export const handler = async (event) => {
-  const connection = await pool.getConnection();
-
   const name = event?.queryStringParameters?.name;
 
+  const connection = await pool.getConnection();
   try {
     if (!name) {
       return await getAll(connection);
