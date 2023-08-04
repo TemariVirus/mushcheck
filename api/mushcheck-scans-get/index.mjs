@@ -1,6 +1,7 @@
 // File: api\mushcheck-scans-get\index.mjs
 
 import { KMSClient, DecryptCommand } from "@aws-sdk/client-kms";
+import { GetObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { createPool } from "mysql2/promise";
 
 // Container setup
@@ -23,10 +24,12 @@ const db_pool = createPool({
   connectionLimit: process.env["db_connectionLimit"],
 });
 
+const s3 = new S3Client();
+
 /**
  * @param {number} statusCode
  * @param {any} body
- * @returns {{statusCode: number, headers: {"Content-Type": string}, body: any}}
+ * @returns {{statusCode: number, headers: {"Content-Type": string}, body: string}}
  */
 function formatResponse(statusCode, body) {
   return {
@@ -41,20 +44,21 @@ function formatResponse(statusCode, body) {
 /**
  * @param {Connection} connection
  * @param {number} id
+ * @returns {Promise<any[]>}
  */
-function updateLastVisit(connection, id) {
+async function updateLastVisit(connection, id) {
   const query = `UPDATE scans SET last_visit = NOW() WHERE id = ?`;
-  connection.execute(query, [id]);
+  return connection.execute(query, [id]);
 }
 
 /**
  * @param {Connection} connection
  * @param {number} id
- * @returns {Promise<{statusCode: number, body: any}>}
+ * @returns {Promise<{statusCode: number, body: string}>}
  */
-function getById(connection, id, user_id) {
+async function getById(connection, id, user_id, s3_client) {
   const query = `SELECT * FROM scans WHERE id = ?`;
-  return connection.execute(query, [id]).then(([rows, fields]) => {
+  return connection.execute(query, [id]).then(async ([rows]) => {
     if (rows.length === 0) {
       return formatResponse(404, { message: "Scan not found" });
     }
@@ -65,34 +69,47 @@ function getById(connection, id, user_id) {
       return formatResponse(403, { message: "This scan is private" });
     }
 
-    updateLastVisit(connection, id);
-    return formatResponse(200, { ...scan, user_id: undefined });
+    const params = {
+      Bucket: process.env["bucketName"],
+      Key: `scan_images/${scan.user_id}_${scan.created_date.getTime()}`,
+      ContentType: "image",
+    };
+    let image = await s3_client.send(new GetObjectCommand(params));
+    image = await image.Body.transformToByteArray();
+    const image_base64 = `data:;base64,${Buffer.from(image).toString(
+      "base64"
+    )}`;
+
+    await updateLastVisit(connection, id);
+    return formatResponse(200, {
+      ...scan,
+      user_id: undefined,
+      image_url: undefined,
+      image: image_base64,
+    });
   });
 }
 
 /**
  * @param {Connection} connection
  * @param {string} name
- * @returns {Promise<{statusCode: number, body: any}>}
+ * @returns {Promise<{statusCode: number, body: string}>}
  */
-function getByUserId(connection, user_id) {
+async function getByUserId(connection, user_id) {
   if (user_id.length !== 64) {
     return Promise.resolve(formatResponse(400, { message: "Invalid user ID" }));
   }
 
   // No need to check if rows.length === 0 because user can have 0 scans.
-  const query = `SELECT * FROM scans WHERE user_id = UNHEX(?)`;
-  return connection.execute(query, [user_id]).then(([rows, fields]) => {
-    return formatResponse(
-      200,
-      rows.map((row) => ({ ...row, user_id: undefined }))
-    );
+  const query = `SELECT id, class1, created_date FROM scans WHERE user_id = UNHEX(?) ORDER BY created_date DESC`;
+  return connection.execute(query, [user_id]).then(([rows]) => {
+    return formatResponse(200, rows);
   });
 }
 
 /**
  * @param {{queryStringParameters: {id: number, user_id: string}}} event
- * @returns {Promise<{statusCode: number, body: any}>}
+ * @returns {Promise<{statusCode: number, body: string}>}
  */
 export const handler = async (event) => {
   const scan_id = event?.queryStringParameters?.id;
@@ -101,7 +118,7 @@ export const handler = async (event) => {
   const connection = await db_pool.getConnection();
   try {
     if (scan_id) {
-      return await getById(connection, scan_id, user_id);
+      return await getById(connection, scan_id, user_id, s3);
     } else if (user_id) {
       return await getByUserId(connection, user_id);
     } else {

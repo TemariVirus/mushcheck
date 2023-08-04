@@ -42,11 +42,9 @@ function formatResponse(statusCode, body) {
  * @param {Connection} connection
  * @returns {Promise<{statusCode: number, body: any}>}
  */
-function getAll(connection) {
+async function getAll(connection) {
   const query = `SELECT name, image_url FROM mushrooms ORDER BY name ASC`;
-  return connection
-    .execute(query)
-    .then(([rows, fields]) => formatResponse(200, rows));
+  return connection.execute(query).then(([rows]) => formatResponse(200, rows));
 }
 
 /**
@@ -54,9 +52,9 @@ function getAll(connection) {
  * @param {string} name
  * @returns {Promise<{statusCode: number, body: any}>}
  */
-function getOne(connection, name) {
+async function getOne(connection, name) {
   const query = `SELECT * FROM mushrooms WHERE name = ?`;
-  return connection.execute(query, [name]).then(([rows, fields]) => {
+  return connection.execute(query, [name]).then(([rows]) => {
     if (rows.length === 0) {
       return formatResponse(404, { message: "Mushroom not found" });
     }
