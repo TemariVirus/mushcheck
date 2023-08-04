@@ -85,8 +85,9 @@ function uploadImageToS3(s3_client, image, key) {
  * @returns {Promise<{statusCode: number, body: any}>}
  */
 export const handler = async (event) => {
-  const image_base64 = event?.body?.image;
-  const user_id = event?.body?.user_id;
+  const body = JSON.parse(event?.body);
+  const image_base64 = body?.image;
+  const user_id = body?.user_id;
 
   if (!image_base64) {
     return formatResponse(400, { message: "No image provided" });
@@ -110,7 +111,9 @@ export const handler = async (event) => {
     const labels = (await getImageLabels(rekognition, image)).CustomLabels;
 
     if (labels.length == 0) {
-      return formatResponse(400, { message: "No mushrooms found" });
+      return formatResponse(200, {
+        message: "Sorry, we couldn't find any mushrooms in your image",
+      });
     }
 
     const image_key = `scan_images/${user_id}_${Date.now()}`;
@@ -129,7 +132,7 @@ export const handler = async (event) => {
     const confidence3 = labels[2]?.Confidence ?? null;
 
     const query = `INSERT INTO scans (image_url, class1, confidence1, class2, confidence2, class3, confidence3, user_id) VALUES (?, ?, ?, ?, ?, ?, ?, UNHEX(?))`;
-    await connection.execute(query, [
+    const [result] = await connection.execute(query, [
       image_url,
       class1,
       confidence1,
@@ -140,7 +143,7 @@ export const handler = async (event) => {
       user_id,
     ]);
 
-    return formatResponse(200, { image_url, labels });
+    return formatResponse(201, { scan_id: result.insertId });
   } catch (error) {
     console.error(
       "Internal server error at mushcheck-rekognition-get-class endpoint",
