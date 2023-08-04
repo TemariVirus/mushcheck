@@ -1,5 +1,6 @@
 <script lang="ts">
-	import Navbar from '$lib/navbar.svelte';
+	import {} from '$lib/stores/persistent';
+	import Navbar from '$lib/components/navbar.svelte';
 </script>
 
 <Navbar />

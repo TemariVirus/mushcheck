@@ -2,7 +2,7 @@
 	import { onMount } from 'svelte';
 	import { page } from '$app/stores';
 	import { getJson } from '$lib';
-	import Navbar from '$lib/navbar.svelte';
+	import Navbar from '$lib/components/navbar.svelte';
 
 	export let mushrooms: { name: string; image_url: string }[] = [];
 	export let name: string | null = '';
@@ -10,7 +10,7 @@
 	export let edible: boolean | null = null;
 	export let description: string | null = '';
 
-	const get_url = `https://qbc4z2jvxd6vzbsfjuinibmnum0xkggn.lambda-url.us-east-1.on.aws`;
+	const get_url = `https://iqdkc2zjsq3c53gkqzuc53atx40avlcj.lambda-url.us-east-1.on.aws/`;
 
 	let loading = true;
 
@@ -44,7 +44,7 @@
 	<section class="mushroom-info-card">
 		<h1>{name}</h1>
 		<img src={image_url} alt={`${name}`} />
-		<p>Edible: {edible ? 'Yes' : 'No'}</p>
+		<p><b>Edible:</b> {edible ? 'Yes' : 'No'}</p>
 		{@html description}
 	</section>
 {:else}

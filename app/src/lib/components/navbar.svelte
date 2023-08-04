@@ -1,6 +1,7 @@
 <nav>
 	<a href="/" data-sveltekit-reload>Home</a>
 	<a href="/mushrooms" data-sveltekit-reload>Dictionary</a>
+	<a href="/scans" data-sveltekit-reload>My Scans</a>
 </nav>
 
 <style>

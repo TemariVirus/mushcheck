@@ -2,7 +2,7 @@ import { createConnection } from "mysql2/promise";
 import { parse } from "node-html-parser";
 
 const connection = await createConnection({
-  host: "mushcheck.cml9zrfq9rgt.us-east-1.rds.amazonaws.com",
+  host: "mushcheck.ckdigbcxnucy.us-east-1.rds.amazonaws.com",
   user: "ctec",
   password: "MySQL_8.0.33_Instance_for_CTEC_project",
   database: "mushcheck",
