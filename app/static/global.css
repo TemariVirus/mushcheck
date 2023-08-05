@@ -62,6 +62,11 @@ img {
 	font-size: 84px;
 }
 
+.drop-zone,
+.drop-zone-image {
+	border-radius: 16px;
+}
+
 .drop-zone {
 	display: flex;
 	flex-direction: column;
@@ -72,9 +77,8 @@ img {
 	margin: 2rem 14rem;
 }
 
-.drop-zone,
-.drop-zone-image {
-	border-radius: 16px;
+.drop-zone:hover {
+	cursor: pointer;
 }
 
 .drop-zone-text {
