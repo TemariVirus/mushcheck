@@ -61,3 +61,36 @@ img {
 .huge-text {
 	font-size: 84px;
 }
+
+.drop-zone {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	min-height: 300px;
+	border: 2px dashed #ccc;
+	margin: 2rem 14rem;
+}
+
+.drop-zone,
+.drop-zone-image {
+	border-radius: 16px;
+}
+
+.drop-zone-text {
+	font-size: 1.2rem;
+	color: #666;
+	margin-bottom: 1rem;
+}
+
+.drop-zone:hover {
+	border-color: #aaa;
+}
+
+.drop-zone.drag-over {
+	background-color: #f7f7f7;
+}
+
+.drop-zone input[type='file'] {
+	display: none;
+}

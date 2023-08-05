@@ -1,8 +1,10 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
 	import { page } from '$app/stores';
 	import { getJson } from '$lib';
 	import Navbar from '$lib/components/navbar.svelte';
+	import LoadingSpinner from '$lib/components/loading_spinner.svelte';
+	import { onMount } from 'svelte';
+	import { writable } from 'svelte/store';
 
 	export let mushrooms: { name: string; image_url: string }[] = [];
 	export let name: string | null = '';
@@ -12,7 +14,7 @@
 
 	const get_url = `https://iqdkc2zjsq3c53gkqzuc53atx40avlcj.lambda-url.us-east-1.on.aws/`;
 
-	let loading = true;
+	let loading = writable(true);
 
 	onMount(async () => {
 		name = $page.url.searchParams.get('name');
@@ -31,15 +33,15 @@
 		if (result.error) {
 			window.location.href = '/mushrooms';
 		} else {
-			loading = false;
+			loading.set(false);
 		}
 	});
 </script>
 
 <Navbar />
 
-{#if loading}
-	<h1 class="absolute-center huge-text">Loading...</h1>
+{#if $loading}
+	<LoadingSpinner />
 {:else if name}
 	<section class="mushroom-info-card">
 		<h1>{name}</h1>
