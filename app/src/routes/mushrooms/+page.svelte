@@ -33,9 +33,9 @@
 		}
 
 		if (result.error) {
-			console.log(result);
 			if (name) {
 				window.location.href = '/mushrooms';
+				return;
 			}
 			load_error = {
 				status: result.status,

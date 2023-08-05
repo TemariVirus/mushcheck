@@ -42,6 +42,7 @@ function formatResponse(statusCode, body) {
     statusCode,
     headers: {
       "Content-Type": "application/json",
+      "Access-Control-Allow-Origin": "*",
     },
     body: JSON.stringify(body),
   };
@@ -89,7 +90,7 @@ export const handler = async (event) => {
 
   try {
     const body = JSON.parse(event?.body);
-    const image_base64 = body?.image;
+    const image_base64 = body?.image?.substring(body?.image?.indexOf(",") + 1);
     const user_id = body?.user_id;
 
     if (!image_base64) {
@@ -104,7 +105,7 @@ export const handler = async (event) => {
     if (!user_id) {
       return formatResponse(400, { message: "No user ID provided" });
     }
-    if (user_id.length !== 64) {
+    if (user_id.length !== 32) {
       return formatResponse(400, { message: "Invalid user ID" });
     }
 
@@ -113,7 +114,7 @@ export const handler = async (event) => {
 
     if (labels.length == 0) {
       return formatResponse(200, {
-        message: "Sorry, we couldn't find any mushrooms in your image",
+        message: "Sorry, we couldn't find any mushrooms in your image.",
       });
     }
 
@@ -124,7 +125,7 @@ export const handler = async (event) => {
       return formatResponse(500, { message: "Failed to upload image" });
     }
 
-    const image_url = `https://${process.env["bucketName"]}.s3.amazonaws.com/${image_key}`;
+    const image_url = image_key;
 
     const class1 = labels[0].Name;
     const confidence1 = labels[0].Confidence;

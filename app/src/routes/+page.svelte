@@ -5,6 +5,9 @@
 	import LoadingSpinner from '$lib/components/loading_spinner.svelte';
 	import { getUserId } from '$lib';
 
+	const image = writable('');
+	const loading = writable(false);
+
 	function readFile(file: File) {
 		const reader = new FileReader();
 		reader.onload = () => {
@@ -21,9 +24,11 @@
 
 	async function postScan(event: SubmitEvent) {
 		event.preventDefault();
+		loading.set(true);
 
 		const data = {
-			image: $image
+			image: $image,
+			user_id: getUserId()
 		};
 
 		if (!data.image || !data.image?.startsWith('data:image/')) {
@@ -36,18 +41,16 @@
 			method: 'POST',
 			body: JSON.stringify(data)
 		}).then(async (response) => {
-			console.log(response);
+			const body = await response.json();
 			if (response.status === 201) {
-				alert('Scan successfully submitted!');
-				window.location.href = `/scans?id=${(await response.json()).id}`;
+				window.location.href = `/scans?id=${body.scan_id}`;
 			} else {
-				alert('Something went wrong. Please try again.');
+				alert(body.message ?? 'Something went wrong. Please try again.');
 			}
 		});
-	}
 
-	const image = writable('');
-	const loading = writable(false);
+		loading.set(false);
+	}
 
 	onMount(() => {
 		const input = document.getElementById('mushroom-image') as HTMLInputElement;
@@ -77,21 +80,25 @@
 
 <Navbar />
 
-<div class="main-content">
-	<h1 class="huge-text">MushCheck</h1>
-	<h3>Your trusted AI-powered tool for identifying mushroom genera.</h3>
-	<form on:submit={postScan}>
-		<label for="mushroom-image" class="drop-zone">
-			{#if $image}
-				<img src={$image} alt="Your mushroom" />
-			{:else}
-				<div class="drop-zone-text">Drag and drop an image of a mushroom here</div>
-			{/if}
-			<input type="file" id="mushroom-image" name="mushroom-image" accept="image/*" />
-		</label>
-		<button type="submit">Scan</button>
-	</form>
-</div>
+{#if $loading}
+	<LoadingSpinner />
+{:else}
+	<div class="main-content">
+		<h1 class="huge-text">MushCheck</h1>
+		<h3>Your trusted AI-powered tool for identifying mushroom genera.</h3>
+		<form on:submit={postScan}>
+			<label for="mushroom-image" class="drop-zone">
+				{#if $image}
+					<img src={$image} alt="Your mushroom" />
+				{:else}
+					<div class="drop-zone-text">Drag and drop an image of a mushroom here</div>
+				{/if}
+				<input type="file" id="mushroom-image" name="mushroom-image" accept="image/*" />
+			</label>
+			<button type="submit">Scan</button>
+		</form>
+	</div>
+{/if}
 
 <style>
 	.main-content {

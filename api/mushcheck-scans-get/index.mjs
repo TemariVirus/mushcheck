@@ -36,6 +36,7 @@ function formatResponse(statusCode, body) {
     statusCode,
     headers: {
       "Content-Type": "application/json",
+      "Access-Control-Allow-Origin": "*",
     },
     body: JSON.stringify(body),
   };
@@ -71,12 +72,12 @@ async function getById(connection, id, user_id, s3_client) {
 
     const params = {
       Bucket: process.env["bucketName"],
-      Key: `scan_images/${scan.user_id}_${scan.created_date.getTime()}`,
+      Key: scan.image_url,
       ContentType: "image",
     };
     let image = await s3_client.send(new GetObjectCommand(params));
     image = await image.Body.transformToByteArray();
-    const image_base64 = `data:;base64,${Buffer.from(image).toString(
+    const image_base64 = `data:image/*;base64,${Buffer.from(image).toString(
       "base64"
     )}`;
 
@@ -96,12 +97,12 @@ async function getById(connection, id, user_id, s3_client) {
  * @returns {Promise<{statusCode: number, body: string}>}
  */
 async function getByUserId(connection, user_id) {
-  if (user_id.length !== 64) {
+  if (user_id.length !== 32) {
     return Promise.resolve(formatResponse(400, { message: "Invalid user ID" }));
   }
 
   // No need to check if rows.length === 0 because user can have 0 scans.
-  const query = `SELECT id, class1, created_date FROM scans WHERE user_id = UNHEX(?) ORDER BY created_date DESC`;
+  const query = `SELECT id, class1, confidence1, created_date FROM scans WHERE user_id = UNHEX(?) ORDER BY created_date DESC`;
   return connection.execute(query, [user_id]).then(([rows]) => {
     return formatResponse(200, rows);
   });
