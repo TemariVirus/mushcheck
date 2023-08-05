@@ -5,19 +5,21 @@
 	import LoadingSpinner from '$lib/components/loading_spinner.svelte';
 	import { onMount } from 'svelte';
 	import { writable } from 'svelte/store';
-
-	export let mushrooms: { name: string; image_url: string }[] = [];
-	export let name: string | null = '';
-	export let image_url: string | null = null;
-	export let edible: boolean | null = null;
-	export let description: string | null = '';
+	import Error from '$lib/components/error.svelte';
 
 	const get_url = `https://iqdkc2zjsq3c53gkqzuc53atx40avlcj.lambda-url.us-east-1.on.aws/`;
+	let load_error: { status: number; message: string } | null = null;
+	const loading = writable(true);
 
-	let loading = writable(true);
+	// export let mushrooms: { name: string; image_url: string }[] = [];
+	let mushrooms: { name: string; image_url: string }[] = [];
+	let name = '';
+	let image_url = '';
+	let edible = false;
+	let description = '';
 
 	onMount(async () => {
-		name = $page.url.searchParams.get('name');
+		name = $page.url.searchParams.get('name') ?? '';
 		let result;
 
 		if (!name) {
@@ -31,7 +33,14 @@
 		}
 
 		if (result.error) {
-			window.location.href = '/mushrooms';
+			console.log(result);
+			if (name) {
+				window.location.href = '/mushrooms';
+			}
+			load_error = {
+				status: result.status,
+				message: result.body
+			};
 		} else {
 			loading.set(false);
 		}
@@ -40,7 +49,9 @@
 
 <Navbar />
 
-{#if $loading}
+{#if load_error}
+	<Error status={load_error.status} message={load_error.message} />
+{:else if $loading}
 	<LoadingSpinner />
 {:else if name}
 	<section class="mushroom-info-card">

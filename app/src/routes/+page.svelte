@@ -35,13 +35,14 @@
 		await fetch(url, {
 			method: 'POST',
 			body: JSON.stringify(data)
-		}).then((response) => {
-			if (response.status === 200) {
+		}).then(async (response) => {
+			console.log(response);
+			if (response.status === 201) {
 				alert('Scan successfully submitted!');
+				window.location.href = `/scans?id=${(await response.json()).id}`;
 			} else {
 				alert('Something went wrong. Please try again.');
 			}
-			console.log(response);
 		});
 	}
 
