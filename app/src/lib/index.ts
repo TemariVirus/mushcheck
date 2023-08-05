@@ -1,9 +1,7 @@
 import { get } from 'svelte/store';
 import { user_id } from '$lib/stores/persistent';
 
-// TODO: return status code end error message correctly
-
-export function getJson(url: string) {
+export async function getJson(url: string) {
 	return fetch(url)
 		.then((r) => {
 			console.log(r);
