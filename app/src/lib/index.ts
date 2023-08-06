@@ -4,7 +4,6 @@ import { user_id } from '$lib/stores/persistent';
 export async function getJson(url: string) {
 	return fetch(url)
 		.then((r) => {
-			console.log(r);
 			return r.ok ? r.json() : Promise.reject(r);
 		})
 		.catch(async (e) => {
