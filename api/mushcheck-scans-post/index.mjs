@@ -151,7 +151,7 @@ export const handler = async (event) => {
     return formatResponse(201, { scan_id: result.insertId });
   } catch (error) {
     console.error(
-      "Internal server error at mushcheck-rekognition-get-class endpoint",
+      "Internal server error at mushcheck-scans-post endpoint",
       error
     );
     return formatResponse(500, { message: "Internal server error" });

@@ -3,7 +3,7 @@
     "init": "npm i && cd app && npm i && for dir in ../api/*/; do [ -f \"$dir/package.json\" ] && (cd \"$dir\" && npm i); done"
   },
   "dependencies": {
-    "mysql2": "^3.5.2",
+    "mysql2": "^3.6.0",
     "node-html-parser": "^6.1.5"
   }
 }

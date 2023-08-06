@@ -22,6 +22,7 @@
 	let confidence3 = Number.NaN;
 	let image_url = '';
 	let created_date: Date | string = '';
+	let is_owner = false;
 	let is_public = false;
 	let persistent = false;
 
@@ -57,6 +58,7 @@
 				confidence3,
 				image: image_url,
 				created_date,
+				is_owner,
 				public: is_public,
 				persistent
 			} = result);
@@ -90,24 +92,26 @@
 		{#if class3}
 			<PercentBar name={class3} percent={confidence3} />
 		{/if}
-		<form on:submit={updateScan}>
-			<label for="public">
-				<h3>
-					Public
-					<input type="checkbox" bind:checked={is_public} />
-				</h3>
-			</label>
-			<label for="persistent">
-				<h3>
-					Don't delete
-					<input type="checkbox" bind:checked={persistent} />
-				</h3>
-			</label>
-			<div class="form-foot">
-				<p>Scan taken: {created_date.toLocaleString()}</p>
-				<button type="submit">Update</button>
-			</div>
-		</form>
+		{#if is_owner}
+			<form on:submit={updateScan}>
+				<label for="public">
+					<h3>
+						Public
+						<input type="checkbox" bind:checked={is_public} />
+					</h3>
+				</label>
+				<label for="persistent">
+					<h3>
+						Don't delete
+						<input type="checkbox" bind:checked={persistent} />
+					</h3>
+				</label>
+				<div class="form-foot">
+					<p>Scan taken: {created_date.toLocaleString()}</p>
+					<button type="submit">Update</button>
+				</div>
+			</form>
+		{/if}
 	</section>
 {:else}
 	<h1>My Scans</h1>

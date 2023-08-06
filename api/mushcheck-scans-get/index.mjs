@@ -65,7 +65,7 @@ async function getById(connection, id, user_id, s3_client) {
     }
 
     const scan = rows[0];
-    scan.user_id = scan.user_id.toString("hex");
+    scan.user_id = scan.user_id.toString("hex").toLowerCase();
     if (!scan.public && scan.user_id !== user_id) {
       return formatResponse(403, { message: "This scan is private" });
     }
@@ -84,9 +84,10 @@ async function getById(connection, id, user_id, s3_client) {
     await updateLastVisit(connection, id);
     return formatResponse(200, {
       ...scan,
+      is_owner: scan.user_id === user_id,
+      image: image_base64,
       user_id: undefined,
       image_url: undefined,
-      image: image_base64,
     });
   });
 }
@@ -114,7 +115,7 @@ async function getByUserId(connection, user_id) {
  */
 export const handler = async (event) => {
   const scan_id = event?.queryStringParameters?.id;
-  const user_id = event?.queryStringParameters?.user_id;
+  const user_id = event?.queryStringParameters?.user_id?.toLowerCase();
 
   const connection = await db_pool.getConnection();
   try {
