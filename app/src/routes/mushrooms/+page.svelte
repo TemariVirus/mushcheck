@@ -1,17 +1,16 @@
 <script lang="ts">
 	import { page } from '$app/stores';
+	import { PUBLIC_API_URL } from '$env/static/public';
 	import { getJson } from '$lib';
-	import Navbar from '$lib/components/navbar.svelte';
+	import Error from '$lib/components/error.svelte';
 	import LoadingSpinner from '$lib/components/loading_spinner.svelte';
+	import Navbar from '$lib/components/navbar.svelte';
 	import { onMount } from 'svelte';
 	import { writable } from 'svelte/store';
-	import Error from '$lib/components/error.svelte';
 
-	const get_url = `https://iqdkc2zjsq3c53gkqzuc53atx40avlcj.lambda-url.us-east-1.on.aws/`;
 	let load_error: { status: number; message: string } | null = null;
 	const loading = writable(true);
 
-	// export let mushrooms: { name: string; image_url: string }[] = [];
 	let mushrooms: { name: string; image_url: string }[] = [];
 	let name = '';
 	let image_url = '';
@@ -23,10 +22,10 @@
 		let result;
 
 		if (!name) {
-			result = await getJson(get_url);
+			result = await getJson(`${PUBLIC_API_URL}/mushrooms`);
 			mushrooms = result;
 		} else {
-			result = await getJson(`${get_url}?name=${name}`);
+			result = await getJson(`${PUBLIC_API_URL}/mushrooms?name=${name}`);
 			image_url = result.image_url;
 			edible = result.edible == 0;
 			description = result.description;
@@ -39,7 +38,7 @@
 			}
 			load_error = {
 				status: result.status,
-				message: result.body
+				message: result.message
 			};
 		} else {
 			loading.set(false);

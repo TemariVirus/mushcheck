@@ -32,27 +32,18 @@ const rekognition = new RekognitionClient();
 
 const s3 = new S3Client();
 
-/**
- * @param {number} statusCode
- * @param {any} body
- * @returns {{statusCode: number, headers: {"Content-Type": string}, body: string}}
- */
 function formatResponse(statusCode, body) {
   return {
     statusCode,
     headers: {
       "Content-Type": "application/json",
       "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "POST",
     },
     body: JSON.stringify(body),
   };
 }
 
-/**
- * @param {RekognitionClient} rekognition_client
- * @param {Buffer} image
- * @returns {Promise<{CustomLabels: {Name: string, Confidence: number}[]}>}
- */
 async function getImageLabels(rekognition_client, image) {
   const params = {
     ProjectVersionArn: process.env["rekognitionEndpoint"],
@@ -65,11 +56,6 @@ async function getImageLabels(rekognition_client, image) {
   return rekognition_client.send(new DetectCustomLabelsCommand(params));
 }
 
-/**
- * @param {S3Client} s3_client
- * @param {Buffer} image
- * @returns {Promise<{ETag: string, VersionId: string, Location: string, key: string, Bucket: string}>}
- */
 async function uploadImageToS3(s3_client, image, key) {
   const params = {
     Bucket: process.env["bucketName"],
@@ -81,10 +67,6 @@ async function uploadImageToS3(s3_client, image, key) {
   return s3_client.send(new PutObjectCommand(params));
 }
 
-/**
- * @param {{body: string}} event
- * @returns {Promise<{statusCode: number, body: string}>}
- */
 export const handler = async (event) => {
   const connection = await db_pool.getConnection();
 

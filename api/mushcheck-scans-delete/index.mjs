@@ -1,4 +1,4 @@
-// File: api\mushcheck-mushrooms-get\index.mjs
+// File: api\mushcheck-scans-delete\index.mjs
 
 import { KMSClient, DecryptCommand } from "@aws-sdk/client-kms";
 import { createPool } from "mysql2/promise";
@@ -29,41 +29,36 @@ function formatResponse(statusCode, body) {
     headers: {
       "Content-Type": "application/json",
       "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "GET",
+      "Access-Control-Allow-Methods": "DELETE",
     },
     body: JSON.stringify(body),
   };
 }
 
-async function getAll(connection) {
-  const query = `SELECT name, image_url FROM mushrooms ORDER BY name ASC`;
-  return connection.execute(query).then(([rows]) => formatResponse(200, rows));
-}
-
-async function getOne(connection, name) {
-  const query = `SELECT * FROM mushrooms WHERE name = ?`;
-  return connection.execute(query, [name]).then(([rows]) => {
-    if (rows.length === 0) {
-      return formatResponse(404, { message: "Mushroom not found" });
-    }
-
-    return formatResponse(200, rows[0]);
-  });
-}
-
 export const handler = async (event) => {
-  const name = event?.queryStringParameters?.name;
+  const scan_id = event?.queryStringParameters?.id;
+  const user_id = event?.queryStringParameters?.user_id;
+  if (!scan_id || !user_id) {
+    return formatResponse(400, { message: "Missing scan ID or user ID" });
+  }
 
   const connection = await db_pool.getConnection();
   try {
-    if (!name) {
-      return await getAll(connection);
-    } else {
-      return await getOne(connection, name);
-    }
+    const query = `DELETE FROM scans WHERE id = ? AND user_id = UNHEX(?)`;
+
+    return await connection
+      .execute(query, [scan_id, user_id])
+      .then(async ([rows]) => {
+        if (rows.affectedRows === 0) {
+          return formatResponse(403, {
+            message: "You do not have permission to delete this scan.",
+          });
+        }
+        return formatResponse(200, { message: "Scan deleted" });
+      });
   } catch (error) {
     console.error(
-      "Internal server error at mushcheck-mushrooms-get endpoint:",
+      "Internal server error at mushcheck-scans-delete endpoint:",
       error
     );
     return formatResponse(500, { message: "Internal server error" });

@@ -26,37 +26,23 @@ const db_pool = createPool({
 
 const s3 = new S3Client();
 
-/**
- * @param {number} statusCode
- * @param {any} body
- * @returns {{statusCode: number, headers: {"Content-Type": string}, body: string}}
- */
 function formatResponse(statusCode, body) {
   return {
     statusCode,
     headers: {
       "Content-Type": "application/json",
       "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET",
     },
     body: JSON.stringify(body),
   };
 }
 
-/**
- * @param {Connection} connection
- * @param {number} id
- * @returns {Promise<any[]>}
- */
 async function updateLastVisit(connection, id) {
   const query = `UPDATE scans SET last_visit = NOW() WHERE id = ?`;
   return connection.execute(query, [id]);
 }
 
-/**
- * @param {Connection} connection
- * @param {number} id
- * @returns {Promise<{statusCode: number, body: string}>}
- */
 async function getById(connection, id, user_id, s3_client) {
   const query = `SELECT * FROM scans WHERE id = ?`;
   return connection.execute(query, [id]).then(async ([rows]) => {
@@ -92,11 +78,6 @@ async function getById(connection, id, user_id, s3_client) {
   });
 }
 
-/**
- * @param {Connection} connection
- * @param {string} name
- * @returns {Promise<{statusCode: number, body: string}>}
- */
 async function getByUserId(connection, user_id) {
   if (user_id.length !== 32) {
     return Promise.resolve(formatResponse(400, { message: "Invalid user ID" }));
@@ -109,10 +90,6 @@ async function getByUserId(connection, user_id) {
   });
 }
 
-/**
- * @param {{queryStringParameters: {id: number, user_id: string}}} event
- * @returns {Promise<{statusCode: number, body: string}>}
- */
 export const handler = async (event) => {
   const scan_id = event?.queryStringParameters?.id;
   const user_id = event?.queryStringParameters?.user_id?.toLowerCase();

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/stores';
+	import { PUBLIC_API_URL } from '$env/static/public';
 	import { getJson, getUserId } from '$lib';
 	import Error from '$lib/components/error.svelte';
 	import LoadingSpinner from '$lib/components/loading_spinner.svelte';
@@ -7,7 +8,6 @@
 	import PercentBar from '$lib/components/percent_bar.svelte';
 	import { onMount } from 'svelte';
 	import { writable } from 'svelte/store';
-	import { PUBLIC_API_URL } from '$env/static/public';
 
 	const loading = writable(true);
 	let load_error: { status: number; message: string } | null = null;
@@ -26,7 +26,38 @@
 	let is_public = false;
 	let persistent = false;
 
-	function updateScan() {}
+	function updateScan() {
+		fetch(`${PUBLIC_API_URL}/scans?id=${id}&user_id=${getUserId()}`, {
+			method: 'PATCH',
+			body: JSON.stringify({
+				public: is_public,
+				persistent
+			})
+		}).then(async (response) => {
+			console.log(is_public);
+			console.log(persistent);
+			const body = await response.json();
+			console.log(body);
+			if (response.status === 200) {
+				alert('Scan updated successfully.');
+			} else {
+				alert(body.message ?? 'Something went wrong. Please try again.');
+			}
+		});
+	}
+
+	function deleteScan() {
+		fetch(`${PUBLIC_API_URL}/scans?id=${id}&user_id=${getUserId()}`, {
+			method: 'DELETE'
+		}).then(async (response) => {
+			const body = await response.json();
+			if (response.status === 200) {
+				window.location.href = '/scans';
+			} else {
+				alert(body.message ?? 'Something went wrong. Please try again.');
+			}
+		});
+	}
 
 	onMount(async () => {
 		id = Number.parseInt($page.url.searchParams.get('id') ?? '');
@@ -38,12 +69,10 @@
 		} else {
 			result = await getJson(`${PUBLIC_API_URL}/scans?id=${id}&user_id=${getUserId()}`);
 			if (result.status === 403) {
-				const stream_reader = (await result.body.getReader().read()).value;
-				const body = new TextDecoder('utf-8').decode(stream_reader);
-				const message = JSON.parse(body).message;
+				console.log(result);
 				load_error = {
 					status: result.status,
-					message: message
+					message: result.message
 				};
 
 				loading.set(false);
@@ -68,7 +97,7 @@
 		if (result.error) {
 			load_error = {
 				status: result.status,
-				message: result.body
+				message: result.message
 			};
 		}
 
@@ -105,10 +134,16 @@
 						Don't delete
 						<input type="checkbox" bind:checked={persistent} />
 					</h3>
+					<p class="info-text">
+						<i>Scans are automatically deleted if no one visits them for 30 days.</i>
+					</p>
 				</label>
 				<div class="form-foot">
 					<p>Scan taken: {created_date.toLocaleString()}</p>
-					<button type="submit">Update</button>
+					<div class="buttons">
+						<button data-sveltekit-reload>Delete</button>
+						<button type="submit" data-sveltekit-reload>Update</button>
+					</div>
 				</div>
 			</form>
 		{/if}
@@ -135,6 +170,7 @@
 		flex-direction: column;
 		align-items: center;
 		width: 50%;
+		max-width: 50%;
 	}
 
 	.scan-list {
@@ -168,10 +204,9 @@
 
 	.scan-img {
 		width: 100%;
-		max-width: 600px;
-		max-height: 500px;
-		border-radius: 16px;
-		margin: 1rem;
+		height: 100%;
+		border-radius: 60px;
+		padding: 1.5rem;
 	}
 
 	form {
@@ -203,7 +238,6 @@
 	}
 
 	.form-foot button {
-		margin-right: 3rem;
 		padding: 0.3rem 1.2rem;
 		border-radius: 8px;
 	}
@@ -211,6 +245,20 @@
 	.form-foot button:hover {
 		background-color: #ddd;
 		cursor: pointer;
+	}
+
+	.buttons button {
+		margin-right: 3rem;
+	}
+
+	.buttons button:not(:last-of-type) {
+		margin-right: 1rem;
+	}
+
+	.info-text {
+		margin-top: 0;
+		color: #ddd;
+		font-size: 0.9rem;
 	}
 
 	.no-scans-txt {

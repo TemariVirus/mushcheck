@@ -23,47 +23,41 @@ const db_pool = createPool({
   connectionLimit: process.env["db_connectionLimit"],
 });
 
-/**
- * @param {number} statusCode
- * @param {any} body
- * @returns {{statusCode: number, headers: {"Content-Type": string}, body: string}}
- */
 function formatResponse(statusCode, body) {
   return {
     statusCode,
     headers: {
       "Content-Type": "application/json",
       "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "PATCH",
     },
     body: JSON.stringify(body),
   };
 }
 
-/**
- * @param {{queryStringParameters: {id: number, user_id: string}}} event
- * @returns {Promise<{statusCode: number, body: string}>}
- */
 export const handler = async (event) => {
   const scan_id = event?.queryStringParameters?.id;
   const user_id = event?.queryStringParameters?.user_id;
-  const is_public = event?.body?.public;
-  const persistent = event?.body?.persistent;
-
-  if (!scan_id || !user_id) {
-    return formatResponse(400, { message: "Missing scan ID or user ID" });
-  }
-  if (!is_public && !persistent) {
-    return formatResponse(200, { message: "No scans updated" });
-  }
 
   const connection = await db_pool.getConnection();
   try {
+    const body = JSON.parse(event?.body);
+    const is_public = body.public;
+    const persistent = body.persistent;
+
+    if (!scan_id || !user_id) {
+      return formatResponse(400, { message: "Missing scan ID or user ID" });
+    }
+    if (is_public === undefined && persistent === undefined) {
+      return formatResponse(200, { message: "No scans updated" });
+    }
+
     const values = [
       ["public", is_public],
       ["persistent", persistent],
     ].filter(([_, value]) => value !== undefined);
     const query = `UPDATE scans SET ${values
-      .map(([key]) => `${key} = ?`)
+      .map(([key, _]) => `${key} = ?`)
       .join(",")} WHERE id = ? AND user_id = UNHEX(?)`;
 
     return await connection
