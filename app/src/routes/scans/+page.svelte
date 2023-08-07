@@ -141,7 +141,7 @@
 				<div class="form-foot">
 					<p>Scan taken: {created_date.toLocaleString()}</p>
 					<div class="buttons">
-						<button data-sveltekit-reload>Delete</button>
+						<button data-sveltekit-reload on:click={deleteScan}>Delete</button>
 						<button type="submit" data-sveltekit-reload>Update</button>
 					</div>
 				</div>
