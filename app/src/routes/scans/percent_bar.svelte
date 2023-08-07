@@ -1,13 +1,11 @@
 <script lang="ts">
-	export let name = '';
+	export let name: string;
 	export let percent: number;
 </script>
 
-<div class="container {name ? 'right' : ''}">
-	{#if name}
-		<h2>{name}</h2>
-	{/if}
-	<div class="percent-bar {name ? 'small' : ''}">
+<div class="container">
+	<h2><a href={`/mushrooms?name=${name}`}>{name}</a></h2>
+	<div class="percent-bar">
 		<div class="percent-bar-fill" style="width: {percent}%" />
 		<p>{Math.round(percent * 10) / 10}%</p>
 	</div>
@@ -21,6 +19,8 @@
 		justify-content: center;
 		padding: 1.5rem;
 		align-items: center;
+		flex-direction: row;
+		justify-content: space-between;
 	}
 
 	h2 {
@@ -28,9 +28,18 @@
 		padding: 0;
 	}
 
+	a {
+		text-decoration: none;
+		color: #fff;
+	}
+
+	a:hover {
+		text-decoration: underline;
+	}
+
 	.percent-bar {
 		position: relative;
-		width: 100%;
+		width: 70%;
 		height: 1.5rem;
 		background-color: #e0e0e0;
 		border-radius: 0.5rem;
@@ -55,14 +64,5 @@
 		padding: 0;
 		color: #000;
 		z-index: 1;
-	}
-
-	.right {
-		flex-direction: row;
-		justify-content: space-between;
-	}
-
-	.small {
-		width: 70%;
 	}
 </style>
