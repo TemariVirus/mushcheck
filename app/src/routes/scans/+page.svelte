@@ -103,6 +103,8 @@
 					alert(body.message ?? 'Something went wrong. Please try again.');
 				}
 			});
+
+			await getScan();
 		} finally {
 			loading.set(false);
 		}
