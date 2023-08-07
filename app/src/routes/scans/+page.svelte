@@ -1,14 +1,14 @@
 <script lang="ts">
+	import { page } from '$app/stores';
+	import { getJson, getUserId } from '$lib';
+	import Error from '$lib/components/error.svelte';
 	import LoadingSpinner from '$lib/components/loading_spinner.svelte';
 	import Navbar from '$lib/components/navbar.svelte';
 	import PercentBar from '$lib/components/percent_bar.svelte';
 	import { onMount } from 'svelte';
 	import { writable } from 'svelte/store';
-	import { page } from '$app/stores';
-	import { getJson, getUserId } from '$lib';
-	import Error from '$lib/components/error.svelte';
+	import { PUBLIC_API_URL } from '$env/static/public';
 
-	const get_url = `https://g81zcif0y1.execute-api.us-east-1.amazonaws.com/stage/scans`;
 	const loading = writable(true);
 	let load_error: { status: number; message: string } | null = null;
 
@@ -21,7 +21,7 @@
 	let class3 = '';
 	let confidence3 = Number.NaN;
 	let image_url = '';
-	let created_date: Date | string = '';
+	let created_date: Date = new Date();
 	let is_owner = false;
 	let is_public = false;
 	let persistent = false;
@@ -33,10 +33,10 @@
 		let result;
 
 		if (!id) {
-			result = await getJson(`${get_url}?user_id=${getUserId()}`);
-			scans = result;
+			result = await getJson(`${PUBLIC_API_URL}/scans?user_id=${getUserId()}`);
+			scans = result.map((scan: any) => ({ ...scan, created_date: new Date(scan.created_date) }));
 		} else {
-			result = await getJson(`${get_url}?id=${id}&user_id=${getUserId()}`);
+			result = await getJson(`${PUBLIC_API_URL}/scans?id=${id}&user_id=${getUserId()}`);
 			if (result.status === 403) {
 				const stream_reader = (await result.body.getReader().read()).value;
 				const body = new TextDecoder('utf-8').decode(stream_reader);
@@ -62,7 +62,7 @@
 				public: is_public,
 				persistent
 			} = result);
-			created_date = new Date(created_date as string);
+			created_date = new Date(created_date);
 		}
 
 		if (result.error) {
@@ -120,7 +120,7 @@
 			{#each scans as scan}
 				<a href={`/scans?id=${scan.id}&user_id=${getUserId()}`} class="scan" data-sveltekit-reload>
 					<p>{Math.round(scan.confidence1 * 10) / 10}% {scan.class1}</p>
-					<p>{scan.created_date}</p>
+					<p>{scan.created_date.toLocaleString()}</p>
 				</a>
 			{/each}
 		{:else}
