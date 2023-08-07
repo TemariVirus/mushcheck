@@ -55,6 +55,10 @@
 	});
 </script>
 
+<head>
+	<title>MushCheck — Dictionary</title>
+</head>
+
 <Navbar />
 
 {#if load_error}

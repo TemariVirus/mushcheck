@@ -144,6 +144,10 @@
 	});
 </script>
 
+<head>
+	<title>MushCheck — Scans</title>
+</head>
+
 <Navbar />
 
 {#if load_error}

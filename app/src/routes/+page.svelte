@@ -91,6 +91,10 @@
 	});
 </script>
 
+<head>
+	<title>MushCheck</title>
+</head>
+
 <Navbar />
 
 {#if $loading}
