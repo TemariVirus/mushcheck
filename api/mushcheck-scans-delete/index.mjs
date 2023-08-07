@@ -1,6 +1,7 @@
 // File: api\mushcheck-scans-delete\index.mjs
 
 import { KMSClient, DecryptCommand } from "@aws-sdk/client-kms";
+import { DeleteObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { createPool } from "mysql2/promise";
 
 // Container setup
@@ -22,6 +23,8 @@ const db_pool = createPool({
   database: process.env["db_database"],
   connectionLimit: process.env["db_connectionLimit"],
 });
+
+const s3 = new S3Client();
 
 function formatResponse(statusCode, body) {
   return {
@@ -49,18 +52,28 @@ export const handler = async (event) => {
 
   const connection = await db_pool.getConnection();
   try {
-    const query = `DELETE FROM scans WHERE id = ? AND user_id = UNHEX(?)`;
-
-    return await connection
-      .execute(query, [scan_id, user_id])
-      .then(async ([rows]) => {
-        if (rows.affectedRows === 0) {
-          return formatResponse(403, {
-            message: "You do not have permission to delete this scan.",
-          });
-        }
-        return formatResponse(200, { message: "Scan deleted" });
+    const query = `SELECT image_url FROM scans WHERE id = ? AND user_id = UNHEX(?)`;
+    const [rows] = await connection.execute(query, [scan_id, user_id]);
+    if (rows.length === 0) {
+      return formatResponse(403, {
+        message: "You do not have permission to delete this scan.",
       });
+    }
+
+    const query2 = `DELETE FROM scans WHERE id = ?`;
+    await connection.execute(query2, [scan_id]);
+
+    const params = {
+      Bucket: process.env["bucketName"],
+      Key: rows[0].image_url,
+    };
+    try {
+      await s3.send(new DeleteObjectCommand(params));
+    } catch (error) {
+      console.error("Error deleting image from S3:", error);
+    }
+
+    return formatResponse(200, { message: "Scan deleted" });
   } catch (error) {
     console.error(
       "Internal server error at mushcheck-scans-delete endpoint:",

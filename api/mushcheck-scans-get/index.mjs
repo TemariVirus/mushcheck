@@ -2,6 +2,7 @@
 
 import { KMSClient, DecryptCommand } from "@aws-sdk/client-kms";
 import { GetObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { createPool } from "mysql2/promise";
 
 // Container setup
@@ -56,24 +57,20 @@ async function getById(connection, id, user_id, s3_client) {
       return formatResponse(403, { message: "This scan is private" });
     }
 
+    await updateLastVisit(connection, id);
+
     const params = {
       Bucket: process.env["bucketName"],
       Key: scan.image_url,
-      ContentType: "image",
     };
-    let image = await s3_client.send(new GetObjectCommand(params));
-    image = await image.Body.transformToByteArray();
-    const image_base64 = `data:image/*;base64,${Buffer.from(image).toString(
-      "base64"
-    )}`;
+    const command = new GetObjectCommand(params);
+    const image_url = await getSignedUrl(s3, command, { expiresIn: 20 });
 
-    await updateLastVisit(connection, id);
     return formatResponse(200, {
       ...scan,
+      image_url,
       is_owner: scan.user_id === user_id,
-      image: image_base64,
       user_id: undefined,
-      image_url: undefined,
     });
   });
 }

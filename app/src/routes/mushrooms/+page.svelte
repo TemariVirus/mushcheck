@@ -18,18 +18,22 @@
 	let description = '';
 
 	async function getMushroom() {
+		loading.set(true);
 		const result = await getJson(`${PUBLIC_API_URL}/mushrooms?name=${name}`);
 		image_url = result.image_url;
 		edible = result.edible == 0;
 		description = result.description;
 
+		loading.set(false);
 		return result;
 	}
 
 	async function getMushrooms() {
+		loading.set(true);
 		const result = await getJson(`${PUBLIC_API_URL}/mushrooms`);
 		mushrooms = result;
 
+		loading.set(false);
 		return result;
 	}
 
@@ -48,8 +52,6 @@
 				message: result.message
 			};
 		}
-
-		loading.set(false);
 	});
 </script>
 
@@ -109,6 +111,7 @@
 		display: flex;
 		flex-direction: column;
 		align-items: center;
+		color: #fff;
 	}
 
 	.mushroom-grid img {

@@ -5,7 +5,7 @@
 	import Error from '$lib/components/error.svelte';
 	import LoadingSpinner from '$lib/components/loading_spinner.svelte';
 	import Navbar from '$lib/components/navbar.svelte';
-	import PercentBar from '$lib/components/percent_bar.svelte';
+	import PercentBar from './percent_bar.svelte';
 	import { onMount } from 'svelte';
 	import { writable } from 'svelte/store';
 
@@ -27,99 +27,118 @@
 	let persistent = false;
 
 	async function getScan() {
-		const result = await getJson(`${PUBLIC_API_URL}/scans?id=${id}`, {
-			headers: {
-				Authorization: `Bearer ${getUserId()}`
-			},
-			method: 'GET'
-		});
+		loading.set(true);
+		try {
+			const result = await getJson(`${PUBLIC_API_URL}/scans?id=${id}`, {
+				headers: {
+					Authorization: `Bearer ${getUserId()}`
+				},
+				method: 'GET'
+			});
 
-		if (result.status === 403) {
-			console.error(result);
-			result.error = true;
+			if (result.status === 403) {
+				console.error(result);
+				loading.set(false);
+				result.error = true;
+				return result;
+			}
+
+			({
+				class1,
+				confidence1,
+				class2,
+				confidence2,
+				class3,
+				confidence3,
+				image_url,
+				created_date,
+				is_owner,
+				public: is_public,
+				persistent
+			} = result);
+			created_date = new Date(created_date);
+
 			return result;
+		} finally {
+			loading.set(false);
 		}
-
-		({
-			class1,
-			confidence1,
-			class2,
-			confidence2,
-			class3,
-			confidence3,
-			image: image_url,
-			created_date,
-			is_owner,
-			public: is_public,
-			persistent
-		} = result);
-		created_date = new Date(created_date);
-
-		return result;
 	}
 
 	async function getScans() {
-		const result = await getJson(`${PUBLIC_API_URL}/scans`, {
-			headers: {
-				Authorization: `Bearer ${getUserId()}`
-			},
-			method: 'GET'
-		});
-		scans = result.map((scan: any) => ({ ...scan, created_date: new Date(scan.created_date) }));
-		return result;
+		loading.set(true);
+		try {
+			const result = await getJson(`${PUBLIC_API_URL}/scans`, {
+				headers: {
+					Authorization: `Bearer ${getUserId()}`
+				},
+				method: 'GET'
+			});
+			scans = result.map((scan: any) => ({ ...scan, created_date: new Date(scan.created_date) }));
+
+			return result;
+		} finally {
+			loading.set(false);
+		}
 	}
 
-	function updateScan() {
-		fetch(`${PUBLIC_API_URL}/scans?id=${id}`, {
-			headers: {
-				Authorization: `Bearer ${getUserId()}`,
-				'Content-Type': 'application/json'
-			},
-			method: 'PATCH',
-			body: JSON.stringify({
-				public: is_public,
-				persistent
-			})
-		}).then(async (response) => {
-			const body = await response.json();
-			if (response.status === 200) {
-				alert('Scan updated successfully.');
-			} else {
-				console.error(body);
-				alert(body.message ?? 'Something went wrong. Please try again.');
-			}
-		});
+	async function updateScan() {
+		loading.set(true);
+		try {
+			await fetch(`${PUBLIC_API_URL}/scans?id=${id}`, {
+				headers: {
+					Authorization: `Bearer ${getUserId()}`,
+					'Content-Type': 'application/json'
+				},
+				method: 'PATCH',
+				body: JSON.stringify({
+					public: is_public,
+					persistent
+				})
+			}).then(async (response) => {
+				const body = await response.json();
+				if (response.status === 200) {
+					alert('Scan updated successfully.');
+				} else {
+					console.error(body);
+					alert(body.message ?? 'Something went wrong. Please try again.');
+				}
+			});
+		} finally {
+			loading.set(false);
+		}
 	}
 
-	function deleteScan() {
-		fetch(`${PUBLIC_API_URL}/scans?id=${id}`, {
-			headers: {
-				Authorization: `Bearer ${getUserId()}`
-			},
-			method: 'DELETE'
-		}).then(async (response) => {
-			const body = await response.json();
-			if (response.status === 200) {
-				window.location.href = '/scans';
-			} else {
-				console.error(body);
-				alert(body.message ?? 'Something went wrong. Please try again.');
-			}
-		});
+	async function deleteScan() {
+		loading.set(true);
+		try {
+			await fetch(`${PUBLIC_API_URL}/scans?id=${id}`, {
+				headers: {
+					Authorization: `Bearer ${getUserId()}`
+				},
+				method: 'DELETE'
+			}).then(async (response) => {
+				const body = await response.json();
+				if (response.status === 200) {
+					window.location.href = '/scans';
+				} else {
+					console.error(body);
+					alert(body.message ?? 'Something went wrong. Please try again.');
+				}
+			});
+		} finally {
+			loading.set(false);
+		}
 	}
 
 	onMount(async () => {
 		id = Number.parseInt($page.url.searchParams.get('id') ?? '');
 		const result = await (id ? getScan() : getScans());
-
 		if (result.error) {
 			load_error = {
 				status: result.status,
 				message: result.message
 			};
 		}
-
-		loading.set(false);
 	});
 </script>
 

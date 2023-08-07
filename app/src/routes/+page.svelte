@@ -56,6 +56,7 @@
 
 		if (!data.image || !data.image?.startsWith('data:image/')) {
 			alert('Please upload an image.');
+			loading.set(false);
 			return;
 		}
 
@@ -66,15 +67,19 @@
 			},
 			method: 'POST',
 			body: JSON.stringify(data)
-		}).then(async (response) => {
-			const body = await response.json();
-			if (response.status === 201) {
-				window.location.href = `/scans?id=${body.scan_id}`;
-			} else {
-				console.error(body);
-				alert(body.message ?? 'Something went wrong. Please try again.');
-			}
-		});
+		})
+			.then(async (response) => {
+				const body = await response.json();
+				if (response.status === 201) {
+					window.location.href = `/scans?id=${body.scan_id}`;
+				} else {
+					console.error(body);
+					alert(body.message ?? 'Something went wrong. Please try again.');
+				}
+			})
+			.catch((error) => {
+				loading.set(false);
+			});
 
 		loading.set(false);
 	}
