@@ -17,21 +17,28 @@
 	let edible = false;
 	let description = '';
 
+	async function getMushroom() {
+		const result = await getJson(`${PUBLIC_API_URL}/mushrooms?name=${name}`);
+		image_url = result.image_url;
+		edible = result.edible == 0;
+		description = result.description;
+
+		return result;
+	}
+
+	async function getMushrooms() {
+		const result = await getJson(`${PUBLIC_API_URL}/mushrooms`);
+		mushrooms = result;
+
+		return result;
+	}
+
 	onMount(async () => {
 		name = $page.url.searchParams.get('name') ?? '';
-		let result;
-
-		if (!name) {
-			result = await getJson(`${PUBLIC_API_URL}/mushrooms`);
-			mushrooms = result;
-		} else {
-			result = await getJson(`${PUBLIC_API_URL}/mushrooms?name=${name}`);
-			image_url = result.image_url;
-			edible = result.edible == 0;
-			description = result.description;
-		}
+		const result = await (name ? getMushroom() : getMushrooms());
 
 		if (result.error) {
+			console.error(result);
 			if (name) {
 				window.location.href = '/mushrooms';
 				return;
@@ -40,9 +47,9 @@
 				status: result.status,
 				message: result.message
 			};
-		} else {
-			loading.set(false);
 		}
+
+		loading.set(false);
 	});
 </script>
 

@@ -37,7 +37,11 @@ function formatResponse(statusCode, body) {
 
 export const handler = async (event) => {
   const scan_id = event?.queryStringParameters?.id;
-  const user_id = event?.queryStringParameters?.user_id;
+  const token = event?.headers?.Authorization?.toLowerCase();
+  if (!token?.startsWith("bearer ")) {
+    return formatResponse(400, { message: "Invalid user ID" });
+  }
+  const user_id = token?.substring(7);
 
   const connection = await db_pool.getConnection();
   try {

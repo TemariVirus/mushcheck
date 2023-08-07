@@ -26,34 +26,83 @@
 	let is_public = false;
 	let persistent = false;
 
+	async function getScan() {
+		const result = await getJson(`${PUBLIC_API_URL}/scans?id=${id}`, {
+			headers: {
+				Authorization: `Bearer ${getUserId()}`
+			},
+			method: 'GET'
+		});
+
+		if (result.status === 403) {
+			console.error(result);
+			result.error = true;
+			return result;
+		}
+
+		({
+			class1,
+			confidence1,
+			class2,
+			confidence2,
+			class3,
+			confidence3,
+			image: image_url,
+			created_date,
+			is_owner,
+			public: is_public,
+			persistent
+		} = result);
+		created_date = new Date(created_date);
+
+		return result;
+	}
+
+	async function getScans() {
+		const result = await getJson(`${PUBLIC_API_URL}/scans`, {
+			headers: {
+				Authorization: `Bearer ${getUserId()}`
+			},
+			method: 'GET'
+		});
+		scans = result.map((scan: any) => ({ ...scan, created_date: new Date(scan.created_date) }));
+		return result;
+	}
+
 	function updateScan() {
-		fetch(`${PUBLIC_API_URL}/scans?id=${id}&user_id=${getUserId()}`, {
+		fetch(`${PUBLIC_API_URL}/scans?id=${id}`, {
+			headers: {
+				Authorization: `Bearer ${getUserId()}`,
+				'Content-Type': 'application/json'
+			},
 			method: 'PATCH',
 			body: JSON.stringify({
 				public: is_public,
 				persistent
 			})
 		}).then(async (response) => {
-			console.log(is_public);
-			console.log(persistent);
 			const body = await response.json();
-			console.log(body);
 			if (response.status === 200) {
 				alert('Scan updated successfully.');
 			} else {
+				console.error(body);
 				alert(body.message ?? 'Something went wrong. Please try again.');
 			}
 		});
 	}
 
 	function deleteScan() {
-		fetch(`${PUBLIC_API_URL}/scans?id=${id}&user_id=${getUserId()}`, {
+		fetch(`${PUBLIC_API_URL}/scans?id=${id}`, {
+			headers: {
+				Authorization: `Bearer ${getUserId()}`
+			},
 			method: 'DELETE'
 		}).then(async (response) => {
 			const body = await response.json();
 			if (response.status === 200) {
 				window.location.href = '/scans';
 			} else {
+				console.error(body);
 				alert(body.message ?? 'Something went wrong. Please try again.');
 			}
 		});
@@ -61,38 +110,7 @@
 
 	onMount(async () => {
 		id = Number.parseInt($page.url.searchParams.get('id') ?? '');
-		let result;
-
-		if (!id) {
-			result = await getJson(`${PUBLIC_API_URL}/scans?user_id=${getUserId()}`);
-			scans = result.map((scan: any) => ({ ...scan, created_date: new Date(scan.created_date) }));
-		} else {
-			result = await getJson(`${PUBLIC_API_URL}/scans?id=${id}&user_id=${getUserId()}`);
-			if (result.status === 403) {
-				console.log(result);
-				load_error = {
-					status: result.status,
-					message: result.message
-				};
-
-				loading.set(false);
-				return;
-			}
-			({
-				class1,
-				confidence1,
-				class2,
-				confidence2,
-				class3,
-				confidence3,
-				image: image_url,
-				created_date,
-				is_owner,
-				public: is_public,
-				persistent
-			} = result);
-			created_date = new Date(created_date);
-		}
+		const result = await (id ? getScan() : getScans());
 
 		if (result.error) {
 			load_error = {
@@ -122,7 +140,7 @@
 			<PercentBar name={class3} percent={confidence3} />
 		{/if}
 		{#if is_owner}
-			<form on:submit={updateScan}>
+			<div class="form">
 				<label for="public">
 					<h3>
 						Public
@@ -141,11 +159,11 @@
 				<div class="form-foot">
 					<p>Scan taken: {created_date.toLocaleString()}</p>
 					<div class="buttons">
-						<button data-sveltekit-reload on:click={deleteScan}>Delete</button>
-						<button type="submit" data-sveltekit-reload>Update</button>
+						<button on:click={updateScan} data-sveltekit-reload>Update</button>
+						<button on:click={deleteScan} data-sveltekit-reload>Delete</button>
 					</div>
 				</div>
-			</form>
+			</div>
 		{/if}
 	</section>
 {:else}
@@ -153,7 +171,7 @@
 	<section class="scan-list">
 		{#if scans.length > 0}
 			{#each scans as scan}
-				<a href={`/scans?id=${scan.id}&user_id=${getUserId()}`} class="scan" data-sveltekit-reload>
+				<a href={`/scans?id=${scan.id}`} class="scan" data-sveltekit-reload>
 					<p>{Math.round(scan.confidence1 * 10) / 10}% {scan.class1}</p>
 					<p>{scan.created_date.toLocaleString()}</p>
 				</a>
@@ -209,7 +227,7 @@
 		padding: 1.5rem;
 	}
 
-	form {
+	.form {
 		width: 100%;
 		display: flex;
 		flex-direction: column;
@@ -219,12 +237,12 @@
 		align-items: left;
 	}
 
-	form h3 {
+	.form h3 {
 		margin: 0.5rem;
 		margin-left: 0;
 	}
 
-	form p {
+	.form p {
 		margin: 1rem;
 		margin-left: 0;
 	}

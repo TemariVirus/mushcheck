@@ -68,12 +68,16 @@ async function uploadImageToS3(s3_client, image, key) {
 }
 
 export const handler = async (event) => {
-  const connection = await db_pool.getConnection();
+  const token = event?.headers?.Authorization?.toLowerCase();
+  if (!token?.startsWith("bearer ")) {
+    return formatResponse(400, { message: "Invalid user ID" });
+  }
+  const user_id = token.substring(7);
 
+  const connection = await db_pool.getConnection();
   try {
     const body = JSON.parse(event?.body);
     const image_base64 = body?.image?.substring(body?.image?.indexOf(",") + 1);
-    const user_id = body?.user_id;
 
     if (!image_base64) {
       return formatResponse(400, { message: "No image provided" });

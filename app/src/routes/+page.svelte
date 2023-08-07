@@ -1,9 +1,10 @@
 <script lang="ts">
+	import { PUBLIC_API_URL } from '$env/static/public';
+	import { getUserId } from '$lib';
+	import LoadingSpinner from '$lib/components/loading_spinner.svelte';
+	import Navbar from '$lib/components/navbar.svelte';
 	import { onMount } from 'svelte';
 	import { writable } from 'svelte/store';
-	import Navbar from '$lib/components/navbar.svelte';
-	import LoadingSpinner from '$lib/components/loading_spinner.svelte';
-	import { getUserId } from '$lib';
 
 	const image = writable('');
 	const loading = writable(false);
@@ -22,40 +23,7 @@
 		reader.readAsDataURL(file);
 	}
 
-	async function postScan(event: SubmitEvent) {
-		event.preventDefault();
-		loading.set(true);
-
-		const data = {
-			image: $image,
-			user_id: getUserId()
-		};
-
-		if (!data.image || !data.image?.startsWith('data:image/')) {
-			alert('Please upload an image.');
-			return;
-		}
-
-		const url = `https://g81zcif0y1.execute-api.us-east-1.amazonaws.com/stage/scans?userId=${getUserId()}`;
-		await fetch(url, {
-			method: 'POST',
-			body: JSON.stringify(data)
-		}).then(async (response) => {
-			const body = await response.json();
-			if (response.status === 201) {
-				window.location.href = `/scans?id=${body.scan_id}`;
-			} else {
-				alert(body.message ?? 'Something went wrong. Please try again.');
-			}
-		});
-
-		loading.set(false);
-	}
-
-	onMount(() => {
-		const input = document.getElementById('mushroom-image') as HTMLInputElement;
-		input.addEventListener('change', () => readFile(input.files![0]));
-
+	function setupDropZone() {
 		const dropZone = document.querySelector('.drop-zone') as HTMLLabelElement;
 
 		dropZone.addEventListener('dragenter', (event) => {
@@ -75,6 +43,46 @@
 			dropZone.classList.remove('drag-over');
 			readFile(event.dataTransfer!.files[0]);
 		});
+	}
+
+	async function postScan(event: SubmitEvent) {
+		event.preventDefault();
+		loading.set(true);
+
+		const data = {
+			image: $image,
+			user_id: getUserId()
+		};
+
+		if (!data.image || !data.image?.startsWith('data:image/')) {
+			alert('Please upload an image.');
+			return;
+		}
+
+		await fetch(`${PUBLIC_API_URL}/scans`, {
+			headers: {
+				Authorization: `Bearer ${getUserId()}`,
+				'Content-Type': 'application/json'
+			},
+			method: 'POST',
+			body: JSON.stringify(data)
+		}).then(async (response) => {
+			const body = await response.json();
+			if (response.status === 201) {
+				window.location.href = `/scans?id=${body.scan_id}`;
+			} else {
+				console.error(body);
+				alert(body.message ?? 'Something went wrong. Please try again.');
+			}
+		});
+
+		loading.set(false);
+	}
+
+	onMount(() => {
+		const input = document.getElementById('mushroom-image') as HTMLInputElement;
+		input.addEventListener('change', () => readFile(input.files![0]));
+		setupDropZone();
 	});
 </script>
 
