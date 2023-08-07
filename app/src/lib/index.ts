@@ -1,8 +1,8 @@
 import { get } from 'svelte/store';
 import { user_id } from '$lib/stores/persistent';
 
-export async function getJson(url: string) {
-	return fetch(url).then(async (r) => {
+export async function getJson(url: string, options?: RequestInit) {
+	return fetch(url, options).then(async (r) => {
 		const body = await r.json();
 		if (!r.ok) {
 			console.error(body);
